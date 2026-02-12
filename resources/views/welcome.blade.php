@@ -10,6 +10,10 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
 
+        <script type="text/javascript"
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key="SB-Mid-client-xxxxxxxxxxxx"></script>
+        
         <!-- Keep minimal styles if needed -->
         <style>
             html,body,#app{height:100%;margin:0}
