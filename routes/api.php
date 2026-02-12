@@ -6,15 +6,25 @@ use App\Http\Controllers\PendaftaranController;
 use App\Http\Controllers\JenjangController;
 use App\Http\Controllers\JurusanController;
 
-
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 Route::post('auth/register', [AuthController::class, 'register']);
 Route::post('auth/login', [AuthController::class, 'login']);
-Route::post('pendaftaran', [PendaftaranController::class, 'store']); // publik
+Route::post('pendaftaran', [PendaftaranController::class, 'store']); 
 
-// Public lookup endpoints for frontend
-Route::get('jenjangs', [App\Http\Controllers\JenjangController::class, 'index']);
-Route::get('jurusans', [App\Http\Controllers\JurusanController::class, 'index']);
+// Pindahkan ini ke atas agar bisa diakses tanpa login (Public Lookup)
+Route::get('jenjangs', [JenjangController::class, 'index']);
+Route::get('jurusans', [JurusanController::class, 'index']);
 
+
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (Auth Sanctum)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
@@ -23,13 +33,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('pendaftars', [PendaftaranController::class, 'index']);
     Route::get('pendaftars/{pendaftar}', [PendaftaranController::class, 'show']);
 
-    // Admin protected resources
-    // Use fully qualified middleware class to avoid alias/container resolution issues
+    /*
+    | Admin Only
+    */
     Route::middleware(\App\Http\Middleware\EnsureUserIsAdmin::class)->group(function () {
-        Route::apiResource('jenjangs', JenjangController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
-        Route::apiResource('jurusans', JurusanController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+        // Gunakan EXCEPT agar route 'index' dan 'show' tidak menimpa route publik di atas
+        Route::apiResource('jenjangs', JenjangController::class)->except(['index', 'show']);
+        Route::apiResource('jurusans', JurusanController::class)->except(['index', 'show']);
 
-        // Approve / reject actions for pendaftars
         Route::post('pendaftars/{pendaftar}/approve', [PendaftaranController::class, 'approve']);
         Route::post('pendaftars/{pendaftar}/reject', [PendaftaranController::class, 'reject']);
     });

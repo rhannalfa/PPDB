@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// remove local axios import so we use the shared window.axios which is configured in bootstrap.js
+// Menggunakan shared window.axios dari bootstrap.js
 const axios = window.axios;
 
 export default function RegistrationForm({ token }) {
@@ -12,14 +12,18 @@ export default function RegistrationForm({ token }) {
   const [jurusans, setJurusans] = useState([]);
   const [fallbackJenjangs, setFallbackJenjangs] = useState(false);
 
+  // useEffect 1: Load Jenjangs dengan Token Header
   useEffect(() => {
-    // load jenjangs (SMP/SMK) on mount
     (async () => {
       try {
-        const res = await axios.get('/api/jenjangs');
+        // Konfigurasi Header untuk Authorization
+        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        const res = await axios.get('/api/jenjangs', config);
+        
         const list = res.data.data || res.data || [];
+        
         if (!list || list.length === 0) {
-          // fallback to hardcoded options if backend returns empty
+          // Fallback jika data di server kosong
           setJenjangs([
             { id: 'SMP', name: 'SMP', fallback: true },
             { id: 'SMK', name: 'SMK', fallback: true },
@@ -31,7 +35,7 @@ export default function RegistrationForm({ token }) {
         }
       } catch (err) {
         console.error('Gagal memuat jenjangs', err);
-        // fallback UI so user can still select
+        // Tetap gunakan fallback jika API error (401/403/500)
         setJenjangs([
           { id: 'SMP', name: 'SMP', fallback: true },
           { id: 'SMK', name: 'SMK', fallback: true },
@@ -39,10 +43,10 @@ export default function RegistrationForm({ token }) {
         setFallbackJenjangs(true);
       }
     })();
-  }, []);
+  }, [token]); // Menambahkan token sebagai dependency
 
+  // useEffect 2: Logic Filter Jurusan (Tetap sama)
   useEffect(() => {
-    // when jenjang is selected, if it's SMK fetch jurusans
     const selected = jenjangs.find(j => String(j.id) === String(jenjang_id));
     const isSmk = selected && String((selected.name || '').toLowerCase()) === 'smk' || String(jenjang_id).toLowerCase() === 'smk';
 
@@ -51,7 +55,6 @@ export default function RegistrationForm({ token }) {
     if (isSmk) {
       (async () => {
         try {
-          // If we are using fallback jenjangs (no backend data), populate fallback jurusans locally
           if (fallbackJenjangs) {
             setJurusans([
               { id: '1-fallback', name: 'Pengembangan Perangkat Lunak dan Game' },
@@ -62,12 +65,10 @@ export default function RegistrationForm({ token }) {
 
           const res = await axios.get('/api/jurusans');
           const list = res.data.data || res.data || [];
-          // JurusanResource returns jenjang name in 'jenjang' field
           const filtered = list.filter(x => (x.jenjang || '').toLowerCase() === 'smk');
           setJurusans(filtered);
         } catch (err) {
           console.error('Gagal memuat jurusans', err);
-          // fallback if API fails
           setJurusans([
             { id: '1-fallback', name: 'Pengembangan Perangkat Lunak dan Game' },
             { id: '2-fallback', name: 'Bisnis Retail' },
@@ -80,12 +81,12 @@ export default function RegistrationForm({ token }) {
     }
   }, [jenjang_id, jenjangs, fallbackJenjangs]);
 
+  // Handle Submit (Tetap sama)
   async function handleSubmit(e) {
     e.preventDefault();
     try {
       let payloadJenjangId = jenjang_id;
 
-      // If we used fallback jenjangs (string ids), try to resolve to real DB id before submitting
       if (fallbackJenjangs) {
         try {
           const res = await axios.get('/api/jenjangs');
@@ -106,8 +107,9 @@ export default function RegistrationForm({ token }) {
       const payload = { nama, jenjang_id: payloadJenjangId, jurusan_id: jurusan_id || null, alamat };
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await axios.post('/api/pendaftaran', payload, { headers });
+      
       alert('Pendaftaran berhasil: ' + (res.data.data?.no_pendaftaran || res.data.no_pendaftaran));
-      // optionally reset form
+      
       setNama('');
       setJenjangId('');
       setJurusanId('');

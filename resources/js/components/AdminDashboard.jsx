@@ -7,7 +7,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await window.axios.get('/api/pendaftars');
+        const res = await window.axios.get('/api/pendaftars?all=1');
         setPendaftars(res.data.data || res.data || []);
       } catch (err) {
         alert('Gagal memuat pendaftar: ' + (err.response?.data?.message || err.message));
@@ -30,7 +30,7 @@ export default function AdminDashboard() {
     } catch (err) {
       alert('Gagal memperbarui status: ' + (err.response?.data?.message || err.message));
       try {
-        const res = await window.axios.get('/api/pendaftars');
+        const res = await window.axios.get('/api/pendaftars?all=1');
         setPendaftars(res.data.data || res.data || []);
       } catch (_) {}
     }

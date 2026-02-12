@@ -6,6 +6,7 @@ use App\Http\Requests\PendaftaranRequest;
 use App\Http\Resources\PendaftarResource;
 use App\Services\RegistrationService;
 use App\Models\Pendaftar;
+use Illuminate\Http\Request;
 
 class PendaftaranController extends Controller
 {
@@ -25,8 +26,20 @@ class PendaftaranController extends Controller
     }
 
     // Protected: list (with eager loading)
-    public function index()
+    public function index(Request $request)
     {
+        // If admin requests all records explicitly, return full collection (no pagination)
+        $all = (bool) $request->query('all', false);
+        $user = $request->user();
+
+        if ($all && $user && ($user->role ?? null) === 'admin') {
+            $list = Pendaftar::with(['jenjang', 'jurusan'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return PendaftarResource::collection($list);
+        }
+
         $list = Pendaftar::with(['jenjang', 'jurusan'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
