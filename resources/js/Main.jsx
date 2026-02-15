@@ -7,7 +7,7 @@ import {
   Navigate,
   useNavigate,
   useLocation,
-  useParams // Tambahkan useParams untuk menangkap noReg
+  useParams
 } from 'react-router-dom';
 
 import { setAuthToken } from './bootstrap';
@@ -72,22 +72,12 @@ function LoginPage({ onLogin }) {
     navigate('/pendaftaran');
   }
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Login</h2>
-      <AuthForm onLogin={handleLoginAndRedirect} />
-    </div>
-  );
+  return <AuthForm onLogin={handleLoginAndRedirect} />;
 }
 
 /* ================= REGISTER PAGE ================= */
 function RegisterPage() {
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Register</h2>
-      <RegisterForm />
-    </div>
-  );
+  return <RegisterForm />;
 }
 
 /* ================= PENDAFTARAN PAGE ================= */
@@ -103,8 +93,8 @@ function PendaftaranPage({ token }) {
 function AppContent({ token, user, handleLogin, handleLogout }) {
   const location = useLocation();
 
-  // Tambahkan /pembayaran jika ingin menyembunyikan nav di halaman bayar
-  const hideNavRoutes = ['/', '/welcome'];
+  // HALAMAN TANPA NAVBAR - Disesuaikan agar halaman bayar juga bisa tanpa nav
+  const hideNavRoutes = ['/', '/welcome', '/login', '/register'];
 
   return (
     <>
@@ -118,7 +108,7 @@ function AppContent({ token, user, handleLogin, handleLogout }) {
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* HALAMAN PEMBAYARAN - Diletakkan di luar Auth jika ingin bisa diakses publik */}
+        {/* HALAMAN PEMBAYARAN */}
         <Route path="/pembayaran/:noReg" element={<PaymentPage />} />
 
         <Route
