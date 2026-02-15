@@ -1,28 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation
+} from 'react-router-dom';
+
 import { setAuthToken } from './bootstrap';
-import Nav from './components/Nav';
+
+import Landing from './components/Landing';
+import Welcome from './components/welcome';
 import AuthForm from './components/AuthForm';
 import RegistrationForm from './components/RegistrationForm';
 import RegisterForm from './components/RegisterForm';
 import AdminDashboard from './components/AdminDashboard';
+import Nav from './components/Nav';
 
-function Home() {
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>Selamat datang di PPDB SKYE</h1>
-      <p>Gunakan navigasi untuk masuk atau mendaftar.</p>
-    </div>
-  );
-}
 
+
+/* ================= LOGIN PAGE ================= */
 function LoginPage({ onLogin }) {
   const navigate = useNavigate();
+
   function handleLoginAndRedirect(token) {
     onLogin(token);
     navigate('/pendaftaran');
   }
+
   return (
     <div style={{ padding: 20 }}>
       <h2>Login</h2>
@@ -31,6 +38,8 @@ function LoginPage({ onLogin }) {
   );
 }
 
+
+/* ================= REGISTER PAGE ================= */
 function RegisterPage() {
   return (
     <div style={{ padding: 20 }}>
@@ -40,6 +49,8 @@ function RegisterPage() {
   );
 }
 
+
+/* ================= PENDAFTARAN PAGE ================= */
 function PendaftaranPage({ token }) {
   return (
     <div style={{ padding: 20 }}>
@@ -49,6 +60,52 @@ function PendaftaranPage({ token }) {
   );
 }
 
+
+/* ================= APP CONTENT (NAV CONTROL HERE) ================= */
+function AppContent({ token, user, handleLogin, handleLogout }) {
+  const location = useLocation();
+
+  // Halaman TANPA navbar
+  const hideNavRoutes = ['/', '/welcome'];
+
+  return (
+    <>
+      {!hideNavRoutes.includes(location.pathname) && (
+        <Nav token={token} user={user} onLogout={handleLogout} />
+      )}
+
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        <Route
+          path="/pendaftaran"
+          element={
+            token
+              ? <PendaftaranPage token={token} />
+              : <Navigate to="/login" replace />
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            token && user?.role === 'admin'
+              ? <AdminDashboard />
+              : <Navigate to="/login" replace />
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
+  );
+}
+
+
+/* ================= MAIN WRAPPER ================= */
 function AppWrapper() {
   const [token, setToken] = useState(() => localStorage.getItem('ppdb_token'));
   const [user, setUser] = useState(null);
@@ -58,7 +115,6 @@ function AppWrapper() {
       setAuthToken(token);
       localStorage.setItem('ppdb_token', token);
 
-      // fetch current user
       (async () => {
         try {
           const res = await window.axios.get('/api/auth/me');
@@ -80,7 +136,6 @@ function AppWrapper() {
   }
 
   function handleLogout() {
-    // attempt server logout
     try {
       window.axios.post('/api/auth/logout');
     } catch (e) {}
@@ -89,17 +144,16 @@ function AppWrapper() {
 
   return (
     <BrowserRouter>
-      <Nav token={token} user={user} onLogout={handleLogout} />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/pendaftaran" element={token ? <PendaftaranPage token={token} /> : <Navigate to="/login" replace />} />
-        <Route path="/admin" element={token && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AppContent
+        token={token}
+        user={user}
+        handleLogin={handleLogin}
+        handleLogout={handleLogout}
+      />
     </BrowserRouter>
   );
 }
 
+
+/* ================= RENDER ================= */
 createRoot(document.getElementById('app')).render(<AppWrapper />);

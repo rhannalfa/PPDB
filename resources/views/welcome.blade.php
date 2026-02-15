@@ -20,7 +20,7 @@
             body{font-family:Figtree, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
         </style>
 
-        @vite(['resources/js/Main.jsx'])
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body>
         <div id="app"></div>
