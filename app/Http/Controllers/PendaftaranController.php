@@ -22,20 +22,22 @@ class PendaftaranController extends Controller
     // Public registration
     public function store(PendaftaranRequest $request)
     {
-        // 1. Daftarkan siswa melalui Service (Tetap gunakan kode asli kamu)
+        // 1. Daftarkan siswa melalui Service
         $pendaftar = $this->service->register($request->validated());
-    
+
         // 2. Konfigurasi Midtrans
         Config::$serverKey = config('services.midtrans.server_key');
         Config::$isProduction = config('services.midtrans.is_production');
         Config::$isSanitized = true;
         Config::$is3ds = true;
-    
-        // 3. Siapkan Parameter Transaksi
+
+        // 3. Order ID Unik (No Pendaftaran + Timestamp)
+        $orderId = $pendaftar->no_pendaftaran . '-' . time();
+
         $params = [
             'transaction_details' => [
-                'order_id' => $pendaftar->no_pendaftaran,
-                'gross_amount' => 150000, // Sesuaikan nominal biaya pendaftaran
+                'order_id' => $orderId,
+                'gross_amount' => 500000, 
             ],
             'customer_details' => [
                 'first_name' => $pendaftar->nama,
@@ -43,20 +45,30 @@ class PendaftaranController extends Controller
                 'phone' => $pendaftar->no_hp,
             ],
         ];
-    
+
         try {
             // 4. Generate Snap Token
             $snapToken = Snap::getSnapToken($params);
-    
-            // 5. Simpan token ke database agar bisa dipanggil lagi jika perlu
+
+            // 5. Simpan token ke database
+            // PENTING: Pastikan 'snap_token' sudah ada di $fillable di model Pendaftar
             $pendaftar->update(['snap_token' => $snapToken]);
-    
-            // 6. Return Resource dengan tambahan snap_token
-            return (new PendaftarResource($pendaftar->load(['jenjang', 'jurusan'])))
-                    ->additional(['snap_token' => $snapToken]);
-    
+
+            // 6. Return Data Lengkap
+            // Kita bungkus dalam 'data' agar konsisten dengan PendaftarResource
+            return response()->json([
+                'message' => 'Pendaftaran berhasil disimpan',
+                'data' => [
+                    'no_pendaftaran' => $pendaftar->no_pendaftaran,
+                    'nama' => $pendaftar->nama,
+                    'snap_token' => $snapToken
+                ]
+            ], 201);
+
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal generate pembayaran: ' . $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Gagal generate pembayaran: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -103,4 +115,15 @@ class PendaftaranController extends Controller
 
         return new PendaftarResource($pendaftar->load(['jenjang', 'jurusan']));
     }
+
+    // PendaftaranController.php
+    public function checkStatus(Request $request) {
+        $pendaftar = Pendaftar::where('email', $request->email)
+                            ->orWhere('no_pendaftaran', $request->no_pendaftaran)
+                            ->firstOrFail();
+
+        return new PendaftarResource($pendaftar);
+    }
+    
 }
+

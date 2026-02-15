@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Gunakan ini untuk navigasi yang lebih smooth
+
 const axios = window.axios;
 
 export default function RegistrationForm({ token }) {
+  const navigate = useNavigate(); // Inisialisasi hook navigasi
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [ekskulList, setEkskulList] = useState([]);
@@ -10,13 +13,13 @@ export default function RegistrationForm({ token }) {
 
   const [formData, setFormData] = useState({
     nama: '', nik: '', nisn: '', jenis_kelamin: '', agama: '', tempat_lahir: '',
-    tanggal_lahir: '', email: '', no_hp: '', asal_sekolah: '', 
+    tanggal_lahir: '', email: '', no_hp: '', asal_sekolah: '',
     jenjang_id: '', jurusan_id: '', ekstrakurikuler_id: '',
-    nama_ayah: '', nama_ibu: '', no_wa_ortu: '', email_ortu: '', 
-    alamat: '', harapan: '' 
+    nama_ayah: '', nama_ibu: '', no_wa_ortu: '', email_ortu: '',
+    alamat: '', harapan: ''
   });
 
-  // --- 1. Load Data Master ---
+  // --- 1. Load Data Master (Jenjang & Ekskul) ---
   useEffect(() => {
     (async () => {
       try {
@@ -28,7 +31,7 @@ export default function RegistrationForm({ token }) {
     })();
   }, []);
 
-  // --- 2. Filter Jurusan (Khusus SMK) ---
+  // --- 2. Filter Jurusan Otomatis (Hanya muncul jika Jenjang = SMK) ---
   useEffect(() => {
     const selected = jenjangs.find(j => String(j.id) === String(formData.jenjang_id));
     const isSmk = selected && (String(selected.name || selected.nama || '').toLowerCase()) === 'smk';
@@ -49,43 +52,38 @@ export default function RegistrationForm({ token }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    // Validasi panjang input NIK & NISN
     if ((name === 'nik' && value.length > 16) || (name === 'nisn' && value.length > 10)) return;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // --- 3. Handle Submit + Midtrans Payment ---
+  // --- 3. Handle Submit: Simpan ke DB & Redirect ke Halaman Pembayaran ---
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     try {
       const headers = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       
-      // Kirim data ke backend
+      // 1. Kirim data ke Laravel
       const response = await axios.post('/api/pendaftaran', formData, { headers });
       
-      // Ambil snap_token dari response Laravel
-      const snapToken = response.data.snap_token; 
+      // 2. Ambil no_pendaftaran dari response Laravel Resource
+      // Pastikan backend mengembalikan struktur: { data: { no_pendaftaran: '...' } }
+      const noReg = response.data.data.no_pendaftaran; 
 
-      if (snapToken) {
-        window.snap.pay(snapToken, {
-          onSuccess: function(result) {
-            alert('Pembayaran Berhasil! Silakan lanjut ke pemberkasan.');
-            window.location.href = "/pemberkasan"; 
-          },
-          onPending: function(result) {
-            alert('Selesaikan pembayaran Anda segera untuk aktivasi akun.');
-            window.location.reload();
-          },
-          onError: function() { alert('Pembayaran gagal.'); },
-          onClose: function() { alert('Segera selesaikan pembayaran untuk memproses pendaftaran.'); }
-        });
+      if (noReg) {
+        // 3. Redirect ke halaman pembayaran dinamis
+        // Menggunakan backtick ( ` ) sangat krusial di sini
+        navigate(`/pembayaran/${noReg}`);
       } else {
-        alert('Pendaftaran Berhasil!');
-        window.location.reload();
+        alert("Pendaftaran berhasil, tapi nomor pendaftaran tidak ditemukan. Silakan hubungi admin.");
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Terjadi kesalahan sistem.');
-    } finally { setLoading(false); }
+      // Menampilkan pesan error dari Laravel (misal: NIK sudah terdaftar)
+      alert(err.response?.data?.message || 'Terjadi kesalahan sistem saat menyimpan data.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   // --- UI/UX STYLES ---
@@ -108,15 +106,16 @@ export default function RegistrationForm({ token }) {
       <div style={styles.card}>
         <div style={styles.header}>
           <h1 style={{ margin: 0 }}>PPDB Online Skye</h1>
-          <p>Langkah {step} dari 3: {step === 1 ? 'Data Pribadi' : step === 2 ? 'Akademik' : 'Keluarga & Bayar'}</p>
+          <p>Langkah {step} dari 3: {step === 1 ? 'Data Pribadi' : step === 2 ? 'Akademik' : 'Konfirmasi & Simpan'}</p>
         </div>
 
         <div style={styles.content}>
           <form onSubmit={handleSubmit}>
-            {/* STEP 1: IDENTITAS LENGKAP */}
+            {/* STEP 1: DATA PRIBADI */}
             {step === 1 && (
               <div style={styles.formGrid}>
-                <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Nama Lengkap</label>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={styles.label}>Nama Lengkap</label>
                   <input name="nama" style={{ ...styles.input, width: '100%' }} value={formData.nama} onChange={handleChange} required />
                 </div>
                 <div style={styles.inputGroup}><label style={styles.label}>NIK</label>
@@ -162,10 +161,10 @@ export default function RegistrationForm({ token }) {
                     {jenjangs.map(j => <option key={j.id} value={j.id}>{j.name || j.nama}</option>)}
                   </select>
                 </div>
-                <div style={styles.inputGroup}><label style={styles.label}>Ekstrakurikuler</label>
+                <div style={styles.inputGroup}><label style={styles.label}>Ekstrakurikuler Pilihan</label>
                   <select name="ekstrakurikuler_id" style={styles.input} value={formData.ekstrakurikuler_id} onChange={handleChange} required>
                     <option value="">Pilih</option>
-                    {ekskulList.map(e => <option key={e.id} value={e.id}>{e.nama_ekskul}</option>)}
+                    {ekskulList.map(e => <option key={e.id} value={e.id}>{e.nama || e.nama_ekskul}</option>)}
                   </select>
                 </div>
                 {jurusans.length > 0 && (
@@ -204,13 +203,19 @@ export default function RegistrationForm({ token }) {
             )}
 
             <div style={styles.footer}>
-              {step > 1 && <button type="button" onClick={() => setStep(step - 1)} style={{ ...styles.btnPrimary, backgroundColor: '#666' }}>Kembali</button>}
+              {step > 1 && (
+                <button type="button" onClick={() => setStep(step - 1)} style={{ ...styles.btnPrimary, backgroundColor: '#666' }}>
+                  Kembali
+                </button>
+              )}
               <div style={{ flexGrow: 1 }}></div>
               {step < 3 ? (
-                <button type="button" onClick={() => setStep(step + 1)} style={styles.btnPrimary}>Lanjut</button>
+                <button type="button" onClick={() => setStep(step + 1)} style={styles.btnPrimary}>
+                  Lanjut
+                </button>
               ) : (
                 <button type="submit" disabled={loading} style={styles.btnSubmit}>
-                  {loading ? 'Memproses...' : 'Kirim & Bayar'}
+                  {loading ? 'Menyimpan...' : 'Simpan & Lanjut ke Pembayaran'}
                 </button>
               )}
             </div>

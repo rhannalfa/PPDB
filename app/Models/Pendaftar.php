@@ -13,31 +13,35 @@ class Pendaftar extends Model
         'nama',
         'nik',
         'nisn',
-        'agama', // Penambahan Baru
-        
+        'agama',
+
         // Data Profil Tambahan
         'jenis_kelamin',
         'tempat_lahir',
         'tanggal_lahir',
         'email',
         'no_hp',
-        
+
         // Data Sekolah & Pilihan
         'jenjang_id',
         'jurusan_id',
-        'ekstrakurikuler_id', // Penambahan Baru
+        'ekstrakurikuler_id',
         'asal_sekolah',
-        
+
         // Data Orang Tua & Kontak
         'nama_ayah',
         'nama_ibu',
-        'no_wa_ortu', // Penambahan Baru
-        'email_ortu', // Penambahan Baru
-        
+        'no_wa_ortu',
+        'email_ortu',
+
         // Alamat & Status Sistem
         'alamat',
-        'harapan', // Penambahan Baru
+        'harapan',
         'status_pendaftaran',
+
+        // --- TAMBAHKAN DUA BARIS INI ---
+        'snap_token',        // Untuk menyimpan token dari Midtrans
+        'status_pembayaran', // Untuk melacak status (pending, success, failed)
     ];
 
     /**
@@ -58,7 +62,6 @@ class Pendaftar extends Model
 
     /**
      * Relasi ke model Ekstrakurikuler
-     * Menambahkan relasi baru agar admin bisa melihat ekskul pilihan siswa
      */
     public function ekstrakurikuler(): BelongsTo
     {

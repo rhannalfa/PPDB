@@ -6,11 +6,11 @@ import {
   Route,
   Navigate,
   useNavigate,
-  useLocation
+  useLocation,
+  useParams // Tambahkan useParams untuk menangkap noReg
 } from 'react-router-dom';
 
 import { setAuthToken } from './bootstrap';
-
 import Landing from './components/Landing';
 import Welcome from './components/welcome';
 import AuthForm from './components/AuthForm';
@@ -19,7 +19,49 @@ import RegisterForm from './components/RegisterForm';
 import AdminDashboard from './components/AdminDashboard';
 import Nav from './components/Nav';
 
+/* ================= PAYMENT PAGE (HALAMAN BARU) ================= */
+function PaymentPage() {
+  const { noReg } = useParams();
+  const [pendaftar, setPendaftar] = useState(null);
 
+  useEffect(() => {
+    // Ambil data pendaftar berdasarkan No Pendaftaran
+    window.axios.get(`/api/pendaftaran/cek/${noReg}`)
+      .then(res => setPendaftar(res.data.data))
+      .catch(err => console.error("Data tidak ditemukan", err));
+  }, [noReg]);
+
+  const handlePay = () => {
+    if (pendaftar && pendaftar.snap_token) {
+      window.snap.pay(pendaftar.snap_token, {
+        onSuccess: () => window.location.reload(),
+        onClose: () => alert("Selesaikan pembayaranmu nanti di halaman ini.")
+      });
+    }
+  };
+
+  if (!pendaftar) return <div style={{ padding: 40, textAlign: 'center' }}>Memuat data pendaftaran...</div>;
+
+  return (
+    <div style={{ padding: 40, textAlign: 'center' }}>
+      <h2>Halo, {pendaftar.nama}</h2>
+      <p>Nomor Pendaftaran: <strong>{noReg}</strong></p>
+      <p>Biaya: <strong>Rp500.000</strong></p>
+      
+      <div style={{ marginTop: 20 }}>
+        {pendaftar.status_pembayaran === 'success' ? (
+          <button style={{ padding: '10px 20px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: 5 }}>
+            Cetak Kartu Ujian
+          </button>
+        ) : (
+          <button onClick={handlePay} style={{ padding: '10px 20px', backgroundColor: '#2ecc71', color: '#fff', border: 'none', borderRadius: 5 }}>
+            Bayar Sekarang
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ================= LOGIN PAGE ================= */
 function LoginPage({ onLogin }) {
@@ -38,7 +80,6 @@ function LoginPage({ onLogin }) {
   );
 }
 
-
 /* ================= REGISTER PAGE ================= */
 function RegisterPage() {
   return (
@@ -49,23 +90,20 @@ function RegisterPage() {
   );
 }
 
-
 /* ================= PENDAFTARAN PAGE ================= */
 function PendaftaranPage({ token }) {
   return (
     <div style={{ padding: 20 }}>
-      <h2>Pendaftaran</h2>
       <RegistrationForm token={token} />
     </div>
   );
 }
 
-
-/* ================= APP CONTENT (NAV CONTROL HERE) ================= */
+/* ================= APP CONTENT ================= */
 function AppContent({ token, user, handleLogin, handleLogout }) {
   const location = useLocation();
 
-  // Halaman TANPA navbar
+  // Tambahkan /pembayaran jika ingin menyembunyikan nav di halaman bayar
   const hideNavRoutes = ['/', '/welcome'];
 
   return (
@@ -79,6 +117,9 @@ function AppContent({ token, user, handleLogin, handleLogout }) {
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* HALAMAN PEMBAYARAN - Diletakkan di luar Auth jika ingin bisa diakses publik */}
+        <Route path="/pembayaran/:noReg" element={<PaymentPage />} />
 
         <Route
           path="/pendaftaran"
@@ -103,7 +144,6 @@ function AppContent({ token, user, handleLogin, handleLogout }) {
     </>
   );
 }
-
 
 /* ================= MAIN WRAPPER ================= */
 function AppWrapper() {
@@ -153,7 +193,6 @@ function AppWrapper() {
     </BrowserRouter>
   );
 }
-
 
 /* ================= RENDER ================= */
 createRoot(document.getElementById('app')).render(<AppWrapper />);

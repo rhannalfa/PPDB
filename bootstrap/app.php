@@ -12,8 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // ...existing code...
+        // Mencegah error CSRF saat Midtrans mengirimkan notifikasi (Webhook)
+        $middleware->validateCsrfTokens(except: [
+            'api/payment/callback', // Pastikan path ini sama dengan yang ada di routes/api.php
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // ...existing code...
+        //
     })->create();
