@@ -9,4 +9,15 @@ export default {
     extend: {},
   },
   plugins: [],
+
+  theme: {
+  extend: {
+    fontFamily: {
+  heading: ['Clash Display', 'sans-serif'],
+  body: ['Plus Jakarta Sans', 'sans-serif'],
+},
+  },
+},
+
 }
+

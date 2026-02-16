@@ -11,7 +11,7 @@ html, body {
 .animated-bg {
   position: relative;
   min-height: 100vh;
-  background: #887878;
+  background: #858080;
   overflow: hidden;
 }
 
@@ -24,7 +24,7 @@ html, body {
   width: 200vw;
   height: 200vh;
   background: radial-gradient(circle at center,
-      rgba(0, 0, 0, 0.6) 0%,
+      #16105799 0%,
       transparent 60%);
   animation: moveLight 5s linear infinite;
 }
@@ -113,4 +113,19 @@ html, body {
     ),
     #0f172a;
   background-attachment: fixed;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
 }
