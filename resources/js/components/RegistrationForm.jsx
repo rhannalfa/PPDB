@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 const axios = window.axios;
 
 export default function RegistrationForm({ token }) {
-
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0); // 0 = pilih jenjang
@@ -16,14 +15,21 @@ export default function RegistrationForm({ token }) {
   const [jurusans, setJurusans] = useState([]);
 
   const [formData, setFormData] = useState({
-    nama: "", nik: "", nisn: "",
-    jenis_kelamin: "", agama: "",
-    tempat_lahir: "", tanggal_lahir: "",
+    nama: "",
+    nik: "",
+    nisn: "",
+    jenis_kelamin: "",
+    agama: "",
+    tempat_lahir: "",
+    tanggal_lahir: "",
     asal_sekolah: "",
-    jenjang_id: "", jurusan_id: "",
+    jenjang_id: "",
+    jurusan_id: "",
     ekstrakurikuler_id: "",
-    nama_ayah: "", nama_ibu: "",
-    no_wa_ortu: "", email_ortu: ""
+    nama_ayah: "",
+    nama_ibu: "",
+    no_wa_ortu: "",
+    email_ortu: "",
   });
 
   // AUTO HIDE ERROR
@@ -51,31 +57,52 @@ export default function RegistrationForm({ token }) {
 
   // FILTER JURUSAN SMK
   useEffect(() => {
-    const selected = jenjangs.find(j => String(j.id) === String(formData.jenjang_id));
-    const isSmk = selected && (String(selected.name || "").toLowerCase() === "smk");
+    const selected = jenjangs.find(
+      (j) => String(j.id) === String(formData.jenjang_id)
+    );
+
+    const isSmk =
+      selected && String(selected.name || selected.nama || "").toLowerCase() === "smk";
 
     if (isSmk) {
       (async () => {
-        const res = await axios.get("/api/jurusans");
-        const list = res.data.data || res.data || [];
-        setJurusans(list.filter(x => (x.jenjang || "").toLowerCase() === "smk"));
+        try {
+          const res = await axios.get("/api/jurusans");
+          const list = res.data.data || res.data || [];
+          setJurusans(
+            list.filter(
+              (x) => String(x.jenjang || "").toLowerCase() === "smk"
+            )
+          );
+        } catch (err) {
+          console.error(err);
+        }
       })();
     } else {
       setJurusans([]);
-      setFormData(prev => ({ ...prev, jurusan_id: "" }));
+      setFormData((prev) => ({ ...prev, jurusan_id: "" }));
     }
   }, [formData.jenjang_id, jenjangs]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // VALIDASI PER STEP
   const validateStep = () => {
     if (step === 1) {
-      if (!formData.nama || !formData.nik || !formData.nisn || !formData.asal_sekolah) {
-        setError("Semua field wajib diisi");
+      if (
+        !formData.nama ||
+        !formData.nik ||
+        !formData.nisn ||
+        !formData.asal_sekolah ||
+        !formData.tempat_lahir ||
+        !formData.tanggal_lahir ||
+        !formData.agama ||
+        !formData.jenis_kelamin
+      ) {
+        setError("Semua field data diri wajib diisi");
         return false;
       }
     }
@@ -88,8 +115,13 @@ export default function RegistrationForm({ token }) {
     }
 
     if (step === 3) {
-      if (!formData.nama_ayah || !formData.nama_ibu) {
-        setError("Data orang tua wajib diisi");
+      if (
+        !formData.nama_ayah ||
+        !formData.nama_ibu ||
+        !formData.no_wa_ortu ||
+        !formData.email_ortu
+      ) {
+        setError("Data orang tua wajib diisi lengkap");
         return false;
       }
     }
@@ -104,14 +136,17 @@ export default function RegistrationForm({ token }) {
 
   const prevStep = () => setStep(step - 1);
 
-  // SUBMIT ASLI (TETAP BACKEND KAMU)
+  // SUBMIT
   async function handleSubmit(e) {
     e.preventDefault();
     if (!validateStep()) return;
 
     setLoading(true);
     try {
-      const headers = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const headers = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
+
       await axios.post("/api/pendaftaran", formData, headers);
       navigate("/dashboard");
     } catch (err) {
@@ -126,22 +161,22 @@ export default function RegistrationForm({ token }) {
 
       {step > 0 && (
         <button
-          onClick={prevStep}
-          className="absolute top-6 left-6 text-white font-semibold hover:underline"
-        >
-          ← Kembali
-        </button>
+        onClick={() => navigate(-1)}
+        className="absolute top-6 left-6 text-white font-semibold hover:underline"
+      >
+        ← Kembali
+      </button>
       )}
 
       <div className="bg-[#9fb0ba] w-full max-w-md rounded-[30px] p-8 shadow-xl max-h-[85vh] overflow-y-auto">
 
         {error && (
-          <div className="mb-4 text-sm text-red-700 bg-red-100 px-4 py-2 rounded-lg animate-fadeIn">
+          <div className="mb-4 text-sm text-red-700 bg-red-100 px-4 py-2 rounded-lg">
             ⚠️ {error}
           </div>
         )}
 
-        {/* STEP 0 PILIH JENJANG */}
+        {/* STEP 0 */}
         {step === 0 && (
           <>
             <h2 className="text-center font-semibold mb-6">
@@ -149,7 +184,7 @@ export default function RegistrationForm({ token }) {
             </h2>
 
             <div className="flex flex-col gap-4">
-              {jenjangs.map(j => (
+              {jenjangs.map((j) => (
                 <button
                   key={j.id}
                   onClick={() => {
@@ -172,10 +207,54 @@ export default function RegistrationForm({ token }) {
               FORMULIR DATA DIRI <br /> 1/3
             </h2>
 
-            <FormInput label="NAMA LENGKAP" name="nama" onChange={handleChange} />
-            <FormInput label="NIK" name="nik" onChange={handleChange} />
-            <FormInput label="NISN" name="nisn" onChange={handleChange} />
-            <FormInput label="ASAL SEKOLAH" name="asal_sekolah" onChange={handleChange} />
+            <FormInput label="NAMA LENGKAP" name="nama" value={formData.nama} onChange={handleChange} />
+            <FormInput label="NIK CALON SISWA" name="nik" value={formData.nik} onChange={handleChange} />
+            <FormInput label="NISN CALON SISWA" name="nisn" value={formData.nisn} onChange={handleChange} />
+            <FormInput label="ASAL SEKOLAH" name="asal_sekolah" value={formData.asal_sekolah} onChange={handleChange} />
+            <FormInput label="TEMPAT LAHIR" name="tempat_lahir" value={formData.tempat_lahir} onChange={handleChange} />
+
+            <div className="mb-4">
+              <label className="block text-sm mb-1">TANGGAL LAHIR</label>
+              <input
+                type="date"
+                name="tanggal_lahir"
+                value={formData.tanggal_lahir}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-full bg-gray-200"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm mb-1">AGAMA</label>
+              <select
+                name="agama"
+                value={formData.agama}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-full bg-gray-200"
+              >
+                <option value="">Pilih Agama</option>
+                <option>Islam</option>
+                <option>Kristen</option>
+                <option>Katolik</option>
+                <option>Hindu</option>
+                <option>Buddha</option>
+                <option>Konghucu</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm mb-1">JENIS KELAMIN</label>
+              <select
+                name="jenis_kelamin"
+                value={formData.jenis_kelamin}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-full bg-gray-200"
+              >
+                <option value="">Pilih Jenis Kelamin</option>
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
 
             <div className="flex justify-end mt-4">
               <button onClick={nextStep} className="btn-dark">
@@ -194,11 +273,12 @@ export default function RegistrationForm({ token }) {
 
             <select
               name="ekstrakurikuler_id"
+              value={formData.ekstrakurikuler_id}
               onChange={handleChange}
               className="w-full px-4 py-2 rounded-full bg-gray-200 mb-4"
             >
               <option value="">Pilih Ekstrakurikuler</option>
-              {ekskulList.map(e => (
+              {ekskulList.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.nama || e.nama_ekskul}
                 </option>
@@ -208,11 +288,12 @@ export default function RegistrationForm({ token }) {
             {jurusans.length > 0 && (
               <select
                 name="jurusan_id"
+                value={formData.jurusan_id}
                 onChange={handleChange}
                 className="w-full px-4 py-2 rounded-full bg-gray-200"
               >
                 <option value="">Pilih Jurusan</option>
-                {jurusans.map(j => (
+                {jurusans.map((j) => (
                   <option key={j.id} value={j.id}>
                     {j.name || j.nama}
                   </option>
@@ -235,8 +316,10 @@ export default function RegistrationForm({ token }) {
               FORMULIR ORANG TUA <br /> 3/3
             </h2>
 
-            <FormInput label="NAMA AYAH" name="nama_ayah" onChange={handleChange} />
-            <FormInput label="NAMA IBU" name="nama_ibu" onChange={handleChange} />
+            <FormInput label="NAMA AYAH" name="nama_ayah" value={formData.nama_ayah} onChange={handleChange} />
+            <FormInput label="NAMA IBU" name="nama_ibu" value={formData.nama_ibu} onChange={handleChange} />
+            <FormInput label="NO. HP ORANG TUA" name="no_wa_ortu" value={formData.no_wa_ortu} onChange={handleChange} />
+            <FormInput label="EMAIL ORANG TUA" name="email_ortu" value={formData.email_ortu} onChange={handleChange} />
 
             <div className="flex justify-end mt-4">
               <button
