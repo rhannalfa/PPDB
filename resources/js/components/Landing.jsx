@@ -26,21 +26,22 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
             className="bg-[#9fb0ba] rounded-3xl p-12 shadow-xl flex flex-col justify-center"
           >
-            <h2 className="text-3xl font-bold mb-4 text-gray-900">
-              PORTAL PENERIMAAN <br />
-              PESERTA DIDIK BARU (PPDB)
-            </h2>
+            <h2 className="font-heading text-4xl font-semibold tracking-tight">
+  PORTAL PENERIMAAN <br />
+  PESERTA DIDIK BARU (PPDB)
+</h2>
 
-            <p className="font-semibold mb-6 text-gray-800">
-              SKYE DIGIPRENEUR SCHOOL
-            </p>
+<p className="font-body font-semibold mb-6 text-gray-800 tracking-wider">
+  SKYE DIGIPRENEUR SCHOOL
+</p>
 
-            <p className="text-sm text-gray-700 leading-relaxed">
-              Mulai perjalanan masa depanmu bersama SKYE Digipreneur School 🚀
-              Kembangkan potensi, kuasai teknologi, dan bangun jiwa entrepreneur
-              sejak dini. Daftar sekarang dan jadilah generasi kreatif, inovatif,
-              dan siap bersaing di era digital.
-            </p>
+<p className="font-body text-sm text-gray-700 leading-relaxed">
+  Mulai perjalanan masa depanmu bersama SKYE Digipreneur School 🚀
+  Kembangkan potensi, kuasai teknologi, dan bangun jiwa entrepreneur
+  sejak dini. Daftar sekarang dan jadilah generasi kreatif, inovatif,
+  dan siap bersaing di era digital.
+</p>
+
           </motion.div>
 
           {/* RIGHT BOX */}
@@ -58,7 +59,7 @@ export default function Landing() {
 
             <Link
               to="/welcome"
-              className="bg-gray-900 text-white text-center py-4 rounded-full font-semibold hover:bg-black transition w-full"
+              className="bg-[#545454] text-white text-center py-4 rounded-full font-semibold hover:bg-black transition w-full"
             >
               DAFTAR DI SINI
             </Link>
